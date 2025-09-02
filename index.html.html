@@ -1,0 +1,402 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title><흥부전> 방탈출 미션 1</title>
+<style>
+  :root {
+    --bg-color: #1f2a33;
+    --card-bg-back: #2b7cff;
+    --card-bg-front: #e0e0e0;
+    --text-color: #1f2a33;
+    --matched-color: #2ecc71;
+    --pill-bg: #34495e;
+    --pill-text: #ecf0f1;
+    --button-primary: #ffc82c;
+    --button-secondary: #bdc3c7;
+    --shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08);
+    --border-color: #3b4e60;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg-color);
+    color: var(--pill-text);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Noto Sans KR", system-ui, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow-x: hidden;
+  }
+  .wrap {
+    width: 100%;
+    max-width: 600px;
+    padding: clamp(8px, 2vw, 16px);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+  }
+  h1 {
+    margin: 0 0 clamp(8px, 1.5vw, 16px);
+    font-size: clamp(20px, 4vw, 28px);
+    font-weight: 800;
+    text-align: center;
+    color: #f1c40f;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+  }
+  .hint {
+    margin: 0 0 clamp(8px, 1.5vw, 16px);
+    color: #ccc;
+    font-size: clamp(10px, 2.5vw, 14px);
+    text-align: center;
+    font-weight: 300;
+  }
+  .hud {
+    display: flex;
+    gap: 6px;
+    margin-bottom: clamp(8px, 1.5vw, 16px);
+    font-size: clamp(10px, 2.5vw, 14px);
+    width: 100%;
+  }
+  .pill {
+    background: var(--pill-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 999px;
+    padding: 4px 10px;
+    font-weight: 700;
+    white-space: nowrap;
+    box-shadow: var(--shadow);
+  }
+  #timeBarWrap {
+    position: relative;
+    height: 8px;
+    background: #555;
+    border-radius: 999px;
+    overflow: hidden;
+    flex: 1;
+    min-width: 50px;
+    align-self: center;
+  }
+  #timeBar {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, #f1c40f, #e67e22);
+    width: 100%;
+    transition: width 0.9s linear;
+  }
+  .board {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(4, 1fr);
+    gap: clamp(4px, 1.5vw, 8px);
+    background: #2c3e50;
+    padding: clamp(4px, 1.5vw, 8px);
+    border-radius: 12px;
+    border: 2px solid #3b4e60;
+    box-shadow: var(--shadow);
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+    align-self: center;
+  }
+  .card {
+    position: relative;
+    aspect-ratio: 1/1;
+    perspective: 1000px;
+  }
+  .inner {
+    position: absolute;
+    inset: 0;
+    transition: transform .4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    transform-style: preserve-3d;
+    cursor: pointer;
+  }
+  .card.flipped .inner, .card.matched .inner {
+    transform: rotateY(180deg);
+    cursor: default;
+  }
+  .face {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    backface-visibility: hidden;
+    padding: 5px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    font-weight: 600;
+    font-size: clamp(10px, 2vw, 16px);
+  }
+  .back {
+    background: linear-gradient(135deg, #3498db, #2b7cff);
+    border: 2px solid var(--border-color);
+    transition: background-color 0.2s ease;
+  }
+  .back:hover {
+    background: linear-gradient(135deg, #4a9ceb, #3c8dff);
+  }
+  .front {
+    transform: rotateY(180deg);
+    background: var(--card-bg-front);
+    color: var(--text-color);
+    text-align: center;
+  }
+  .front span.word { 
+    font-weight: 800; 
+    font-size: clamp(14px, 2.5vw, 18px);
+    margin-bottom: 2px;
+    display: block;
+  }
+  .front span.meaning { 
+    font-weight: 400; 
+    font-size: clamp(12px, 2vw, 16px); 
+    line-height: 1.2;
+    display: block;
+  }
+  .disabled .inner { pointer-events: none; }
+  .controls {
+    display: flex;
+    gap: 6px;
+    margin-top: clamp(16px, 3vw, 24px);
+    flex-shrink: 0;
+    width: 100%;
+    max-width: 600px;
+    align-self: center;
+  }
+  .controls button {
+    flex: 1;
+    height: clamp(32px, 8vw, 40px);
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: clamp(12px, 3vw, 16px);
+    transition: transform 0.1s ease, box-shadow 0.1s ease;
+    box-shadow: var(--shadow);
+  }
+  .controls button:active {
+    transform: translateY(2px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+  #restartBtn {
+    background: var(--button-secondary);
+    color: var(--text-color);
+  }
+  #checkBtn {
+    background: var(--button-primary);
+    color: var(--text-color);
+  }
+  .msg {
+    margin-top: 6px;
+    font-weight: 700;
+    display: none;
+    font-size: clamp(12px, 3vw, 16px);
+    text-align: center;
+  }
+  .ok { color: #2ecc71; }
+  .err { color: #e74c3c; }
+  
+  /* 가로 화면 최적화 */
+  @media (orientation: landscape) {
+    .wrap {
+      max-width: 800px;
+      height: auto;
+      min-height: 100vh;
+      justify-content: center;
+    }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1><흥부전> 방탈출 미션 1</h1>
+  <p class="hint">단어와 맞는 단어 뜻 카드를 모두 맞추세요! 제한 시간 90초입니다.</p>
+  
+  <div class="hud">
+    <div class="pill">남은 시간: <span id="timeLeft">--</span>s</div>
+    <div class="pill">시도: <span id="moves">0</span></div>
+    <div id="timeBarWrap"><div id="timeBar"></div></div>
+  </div>
+
+  <div id="board" class="board" aria-live="polite"></div>
+
+  <div class="controls">
+    <button id="restartBtn">다시 시작</button>
+    <button id="checkBtn">정답 확인</button>
+  </div>
+
+  <div id="ok" class="msg ok"></div>
+  <div id="err" class="msg err"></div>
+</div>
+
+<script>
+/* ===== 구성(여기만 고치면 돼요) ===== */
+const CFG = {
+  // 8개 단어세트(뒤에 자동으로 복제되어 총 16장)
+  ITEMS: [
+    { id: 1, word: "멍석자리", meaning: "짚으로 엮어 만든 자리" },
+    { id: 2, word: "춘하추동", meaning: "봄, 여름, 가을, 겨울" },
+    { id: 3, word: "품", meaning: "어떤 일에 드는 힘이나 수고" },
+    { id: 4, word: "풀무", meaning: "불을 피울 때 바람을 일으키는 기구" },
+    { id: 5, word: "전답", meaning: "논과 밭" },
+    { id: 6, word: "대청", meaning: "방과 방 사이의 큰 마루" },
+    { id: 7, word: "노적가리", meaning: "곡식더미" },
+    { id: 8, word: "싸라기", meaning: "부스러진 쌀알" }
+  ],
+  TIME_LIMIT_SEC: 90, // 제한 시간(초)
+  MSG_SUCCESS: "아무리 일을 해도 생계를 유지하기 어려웠던 흥부는 놀부네 집으로 향하는데... 선생님께 놀부에게 가는 지도를 받으시오.",
+  MSG_FAIL: "실패입니다! 다시 시도하세요~"
+};
+/* ================================== */
+
+// 상태
+let deck=[], first=null, second=null, lock=false, matchedCount=0, moves=0;
+let timeLeft=CFG.TIME_LIMIT_SEC, timerId=null, timeUp=false;
+
+const board = document.getElementById('board');
+const nMoves = document.getElementById('moves');
+const timeTxt = document.getElementById('timeLeft');
+const timeBar = document.getElementById('timeBar');
+const okMsg = document.getElementById('ok');
+const errMsg = document.getElementById('err');
+
+// 웹오디오 효과음
+let audioCtx;
+function AC(){ return audioCtx ||= new (window.AudioContext||window.webkitAudioContext)(); }
+function sfxFlip(){ const c=AC(),o=c.createOscillator(),g=c.createGain();
+  o.type='triangle'; o.frequency.value=650; g.gain.value=.12;
+  g.gain.exponentialRampToValueAtTime(0.0001,c.currentTime+.12);
+  o.connect(g).connect(c.destination); o.start(); o.stop(c.currentTime+.13); }
+function sfxMatch(){ const c=AC(),o=c.createOscillator(),g=c.createGain();
+  o.type='sine'; o.frequency.value=920; g.gain.value=.18;
+  g.gain.exponentialRampToValueAtTime(0.0001,c.currentTime+.25);
+  o.connect(g).connect(c.destination); o.start(); o.stop(c.currentTime+.26); }
+function sfxWrong(){ const c=AC(),o=c.createOscillator(),g=c.createGain();
+  o.type='sawtooth'; o.frequency.setValueAtTime(240,c.currentTime);
+  o.frequency.linearRampToValueAtTime(180,c.currentTime+.25);
+  g.gain.value=.12; g.gain.exponentialRampToValueAtTime(0.0001,c.currentTime+.26);
+  o.connect(g).connect(c.destination); o.start(); o.stop(c.currentTime+.27); }
+function sfxTimeup(){ const c=AC(),o=c.createOscillator(),g=c.createGain();
+  o.type='square'; o.frequency.value=130; g.gain.value=.15;
+  g.gain.exponentialRampToValueAtTime(0.0001,c.currentTime+.5);
+  o.connect(g).connect(c.destination); o.start(); o.stop(c.currentTime+.52); }
+
+// 초기화
+init();
+
+document.getElementById('restartBtn').addEventListener('click', init);
+document.getElementById('checkBtn').addEventListener('click', manualCheck);
+
+function init(){
+  // 상태 리셋
+  clearInterval(timerId); timeUp=false;
+  first=second=null; lock=false; matchedCount=0; moves=0;
+  timeLeft=CFG.TIME_LIMIT_SEC; nMoves.textContent='0';
+  timeTxt.textContent=timeLeft; timeBar.style.width='100%';
+  okMsg.style.display=errMsg.style.display='none';
+  // 덱 생성 (단어/뜻 쌍으로)
+  const allCards = CFG.ITEMS.flatMap(item => [
+    { type: 'word', pairId: item.id, value: item.word },
+    { type: 'meaning', pairId: item.id, value: item.meaning }
+  ]);
+  deck = shuffle(allCards).map((card, i) => ({
+    ...card,
+    id: i,
+    matched: false,
+    el: null
+  }));
+  // 보드 렌더
+  board.innerHTML='';
+  deck.forEach(card=>{
+    const el = makeCard(card);
+    board.appendChild(el);
+    card.el = el;
+  });
+  // 타이머 시작
+  timerId = setInterval(tick, 1000);
+}
+
+function makeCard(card){
+  const wrap = document.createElement('div');
+  wrap.className = 'card';
+  let innerHtml;
+  if(card.type === 'word') {
+    innerHtml = `<div class="face front"><span class="word">${escapeHtml(card.value)}</span></div>`;
+  } else {
+    innerHtml = `<div class="face front"><span class="meaning">${escapeHtml(card.value)}</span></div>`;
+  }
+  wrap.innerHTML = `
+    <div class="inner" role="button" aria-label="카드 뒤집기" tabindex="0">
+      <div class="face back" aria-hidden="true"></div>
+      ${innerHtml}
+    </div>`;
+  const inner = wrap.firstElementChild;
+  // 클릭/키보드
+  function tryFlip(){ if(lock || timeUp || card.matched) return;
+    sfxFlip(); flipCard(wrap, true); onFlip(card, wrap); }
+  wrap.addEventListener('click', tryFlip);
+  wrap.addEventListener('keydown', (e)=>{ if(e.key==='Enter' || e.key===' '){ e.preventDefault(); tryFlip(); }});
+  return wrap;
+}
+
+function onFlip(card, el){
+  if(!first){ first = card; return; }
+  if(first && !second && first.id !== card.id){ second = card; lock=true; moves++; nMoves.textContent=moves;
+    // 판정
+    if(first.pairId === second.pairId){
+      setTimeout(()=>{ markMatched(first); markMatched(second);
+        sfxMatch(); resetPick(); checkWin(); }, 250);
+    }else{
+      setTimeout(()=>{ flipCard(first.el, false); flipCard(second.el, false);
+        sfxWrong(); resetPick(); }, 650);
+    }
+  }
+}
+function resetPick(){ first=second=null; lock=false; }
+function markMatched(c){ c.matched=true; c.el.classList.add('matched'); }
+function flipCard(el, on){ el.classList.toggle('flipped', on); }
+
+function tick(){
+  timeLeft--; if(timeLeft<0){ timeLeft=0; }
+  timeTxt.textContent = timeLeft;
+  timeBar.style.width = (timeLeft/CFG.TIME_LIMIT_SEC*100)+'%';
+  if(timeLeft===0){
+    clearInterval(timerId); timeUp=true; board.classList.add('disabled');
+    sfxTimeup();
+    show(errMsg, CFG.MSG_FAIL);
+  }
+}
+
+function checkWin(){
+  matchedCount = deck.filter(c=>c.matched).length;
+  if(matchedCount === deck.length && !timeUp){
+    clearInterval(timerId);
+    show(okMsg, CFG.MSG_SUCCESS);
+  }
+}
+
+function manualCheck(){
+  if(deck.every(c=>c.matched) && !timeUp){
+    show(okMsg, CFG.MSG_SUCCESS);
+  }else{
+    show(errMsg, CFG.MSG_FAIL);
+  }
+}
+
+/* 유틸 */
+function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]] } return a; }
+function show(el,txt){ okMsg.style.display=errMsg.style.display='none'; el.textContent=txt; el.style.display='block'; }
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m])); }
+</script>
+</body>
+</html>
